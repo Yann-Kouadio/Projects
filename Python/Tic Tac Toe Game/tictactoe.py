@@ -4,6 +4,7 @@
 """
 import pandas as pd
 
+
 def game_init(players_dict, player_number=2):
     """
         This function is used to initialize the players information and start the game
@@ -16,14 +17,14 @@ def game_init(players_dict, player_number=2):
                 f"\t{players_dict[i]['name']}, please enter your name (default = {players_dict[i]['name']}) : ")
 
             if i == 0:
-                if len(nameInput) > 0 and nameInput.capitalize() != players_dict[i+1]['name']:
+                if len(nameInput) > 0 and nameInput.capitalize() != players_dict[i + 1]['name']:
                     players_dict[i]['name'] = nameInput.capitalize()
                     break
                 elif len(nameInput) == 0:
                     break
 
             else:
-                if len(nameInput) > 0 and nameInput.capitalize() != players_dict[i-1]['name']:
+                if len(nameInput) > 0 and nameInput.capitalize() != players_dict[i - 1]['name']:
                     players_dict[i]['name'] = nameInput.capitalize()
                     break
                 elif len(nameInput) == 0:
@@ -34,14 +35,14 @@ def game_init(players_dict, player_number=2):
                 f"\t{players_dict[i]['name']}, please choose your symbol (default = {players_dict[i]['symbol']}) : ")
 
             if i == 0:
-                if len(symbolInput) > 0 and symbolInput != players_dict[i+1]['symbol']:
+                if len(symbolInput) > 0 and symbolInput != players_dict[i + 1]['symbol']:
                     players_dict[i]['symbol'] = symbolInput.upper()
                     break
                 elif len(symbolInput) == 0:
                     break
 
             else:
-                if len(symbolInput) > 0 and symbolInput != players_dict[i-1]['symbol']:
+                if len(symbolInput) > 0 and symbolInput != players_dict[i - 1]['symbol']:
                     players_dict[i]['symbol'] = symbolInput.upper()
                     break
                 elif len(symbolInput) == 0:
@@ -201,7 +202,6 @@ def play_game(board_list, players_dict):
 
 
 def start_game():
-
     print('\t****************************************************')
     print(f"\t {' ' * 10} Welcome to Tic Tac Toe!")
     print('\tPlease consider your numpad as the grid for the game')
@@ -232,4 +232,5 @@ def start_game():
             print("\nThank for your time, Bye ;-)")
 
 
-start_game()
+if __name__ == '__main__':
+    start_game()
