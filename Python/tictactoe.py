@@ -1,14 +1,19 @@
 """
     TIC TAC TOE GAME
+    You can play it with your numpad
 """
 import pandas as pd
 
 def game_init(players_dict, player_number=2):
+    """
+        This function is used to initialize the players information and start the game
+    """
+
     # Let the player choose their symbol
     for i in range(player_number):
         while True:
             nameInput = input(
-                f"\t{players_dict[i]['name']}, please enter your name (default = {players_dict[i]['name']}) :")
+                f"\t{players_dict[i]['name']}, please enter your name (default = {players_dict[i]['name']}) : ")
 
             if i == 0:
                 if len(nameInput) > 0 and nameInput.capitalize() != players_dict[i+1]['name']:
@@ -26,7 +31,7 @@ def game_init(players_dict, player_number=2):
 
         while True:
             symbolInput = input(
-                f"\t{players_dict[i]['name']}, please choose your symbol (default = {players_dict[i]['symbol']}) :")
+                f"\t{players_dict[i]['name']}, please choose your symbol (default = {players_dict[i]['symbol']}) : ")
 
             if i == 0:
                 if len(symbolInput) > 0 and symbolInput != players_dict[i+1]['symbol']:
@@ -55,11 +60,21 @@ def game_init(players_dict, player_number=2):
 
 
 def display_board(board):
+    """
+        Display the board, it will look like:
+        |  |  |
+        |  |  |
+        |  |  |
+    """
     for i in range(9, 0, -3):
         print('{:^5} | {:^5} | {:^5}'.format(board[i - 2], board[i - 1], board[i]))
 
 
 def get_diag(data_frame):
+    """
+        Return the two diagonals of a dataframe
+    """
+
     keys = data_frame.keys()
 
     diag1 = list()
@@ -70,10 +85,13 @@ def get_diag(data_frame):
             diag1.append(data_frame.iloc[i][key])
             diag2.append(data_frame.iloc[len(keys) - (i + 1)][key])
 
-    return (diag1, diag2)
+    return diag1, diag2
 
 
 def has_winner(data_frame, iterator, player_symbol):
+    """
+        Loop through all the rows, cols and diags of the dataframe to find a winner
+    """
     result = False
     keys = data_frame.keys()
 
@@ -143,7 +161,7 @@ def play_game(board_list, players_dict):
     i = 0
 
     while i < len(board_list) - 1 and not gameEnd:
-        inputValue = input(f"\t {players_dict[activePlayer]['name']} please choose your next position (1-9) :")
+        inputValue = input(f"\t {players_dict[activePlayer]['name']} please choose your position (1-9) : ")
 
         # Verify that the input is not a space and is a number between 1 and 9
         # Verify that also it has not already been inserted
@@ -156,7 +174,7 @@ def play_game(board_list, players_dict):
                     print("\t\t\t - Sorry, movement not allow")
 
             if incorrectInput:
-                inputValue = input("\t\t - Please choose a value between 1-9 :")
+                inputValue = input("\t\t - Please choose a value between 1-9 : ")
 
         # Add the update the value in the boardList and display the updated board
         playerSymbol = players_dict[activePlayer]['symbol']
@@ -182,15 +200,6 @@ def play_game(board_list, players_dict):
     print('')
 
 
-def play_again(board_list, players_dict):
-    replay = input("Do you want to play again (Yes or No) ?")
-
-    if replay.lower() in ['yes', 'ye', 'y']:
-        play_game(board_list=board_list, players_dict=players_dict)
-    else:
-        print("\nThank for your time, Bye ;-)")
-
-
 def start_game():
 
     print('\t****************************************************')
@@ -214,7 +223,7 @@ def start_game():
     while gameHasStarted:
         play_game(board_list=boardList, players_dict=playersDict)
 
-        replay = input("Do you want to play again (Yes or No) ?")
+        replay = input("Do you want to play again (Yes or No) ? ")
 
         boardList = [''] * 10
 
