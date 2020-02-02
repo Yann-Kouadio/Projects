@@ -1,6 +1,8 @@
 # Projects
 
-By clicking on project's link, you can wiew or run the project code. The sources files are also avaible on the corresponding project folder.
+This repository contains all my public projects.
+
+Below, you can find links that allow you to interact or run some projects. The sources of those projects are also located under their corresponding project folder.
 
 ### Pyton
 * **Tic tac toe** - [run it here](https://colab.research.google.com/drive/1LnE6QMb17MfZ-UiudFePz6jBFVXqNg-d)
