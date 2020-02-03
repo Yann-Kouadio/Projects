@@ -56,10 +56,31 @@ let budgetController = (function() {
 
         allBudgets.push(new Budget(month, year));
 
+        localStorage.setItem('allBudgets', JSON.stringify(allBudgets));
+
         return budget;
     };
 
+    let updateAllBudgetStorage =  function(budgetObj) {
+        const allBudgetStorage = JSON.parse(localStorage.getItem('allBudgets'));
+
+        // Find the index of the current object
+        const index = allBudgetStorage.findIndex( el => {return  el.month === budgetObj.month && el.year === budgetObj.year});
+
+        // Update it
+        allBudgetStorage[index] = budgetObj;
+
+        // Update the local storage
+        localStorage.setItem('allBudgets', JSON.stringify(allBudgetStorage))
+    };
+
+    const storeBudget = JSON.parse(localStorage.getItem('allBudgets'));
+
     let allBudgets = [];
+
+    if (storeBudget) {
+        allBudgets = storeBudget;
+    }
 
     return {
         init: function(month, year) {
@@ -174,6 +195,9 @@ let budgetController = (function() {
             }
 
             // Expense = 100 and income 300, spent 33.333% = 100/300 = 0.3333 * 100
+
+            // Add the final budget obj to the local storage
+            updateAllBudgetStorage(budgetObj);
         },
 
         calculatePercentages: function(budgetObj) {
@@ -208,6 +232,8 @@ let budgetController = (function() {
         //         percentage: budgetObj.percentage
         //     };
         // },
+
+
 
     };
 
