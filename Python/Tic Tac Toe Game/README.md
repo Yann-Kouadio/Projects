@@ -15,48 +15,48 @@
 
 	Game starts ...
 
-      |       |      
-      |       |      
-      |       |      
+	      |       |      
+	      |       |      
+	      |       |      
 
 	 Player 1 please choose your position (1-9) : 1
 
-      |       |      
-      |       |      
-  X   |       |      
+	      |       |      
+	      |       |      
+	  X   |       |      
 
 	 Player 2 please choose your position (1-9) : 5
 
-      |       |      
-      |   O   |      
-  X   |       |      
+	      |       |      
+	      |   O   |      
+	  X   |       |      
 
 	 Player 1 please choose your position (1-9) : 3
 
-      |       |      
-      |   O   |      
-  X   |       |   X  
+	      |       |      
+	      |   O   |      
+	  X   |       |   X  
 
 	 Player 2 please choose your position (1-9) : 2
 
-      |       |      
-      |   O   |      
-  X   |   O   |   X  
+	      |       |      
+	      |   O   |      
+	  X   |   O   |   X  
 
 	 Player 1 please choose your position (1-9) : 9
 
-      |       |   X  
-      |   O   |      
-  X   |   O   |   X  
+	      |       |   X  
+	      |   O   |      
+	  X   |   O   |   X  
 
 	 Player 2 please choose your position (1-9) : 8
 
-      |   O   |   X  
-      |   O   |      
-  X   |   O   |   X  
+	      |   O   |   X  
+	      |   O   |      
+	  X   |   O   |   X  
 
-Player 2 won the game
+	Player 2 won the game
 
-Do you want to play again (Yes or No) ? No
+	Do you want to play again (Yes or No) ? No
 
-Thank for your time, Bye ;-)
+	Thank for your time, Bye ;-)
