@@ -589,7 +589,7 @@ def ask_for_move():
                        f"\t\t\t\t 1 - Hit \n"
                        f"\t\t\t\t 2 - Stand \n"
                        f"\t\t\t\t 3 - Split \n"
-                       f"\t\t\t\t 4 - Double Down ?")
+                       f"\t\t\t\t 4 - Double Down ? ")
 
     while move_input not in '1234' or len(move_input) < 1:
         move_input = input("\t\t\t\t\t - Please choose between (1 - 4) : ")
