@@ -54,7 +54,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?2
+				 4 - Double Down ? 2
 
 	 Player 2 your turn
 
@@ -63,7 +63,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?2
+				 4 - Double Down ? 2
 
 	 Dealer your turn 
 
@@ -127,7 +127,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?4
+				 4 - Double Down ? 4
 			 - Please insert an amount up to '10' : 10
 
 	 Player 2 : 
@@ -182,7 +182,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?1
+				 4 - Double Down ? 1
 
 	 Player 1 : 
 		 - Hand 1 : ('A ♠', '3 ♦', '2 ♥')
@@ -197,7 +197,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?2
+				 4 - Double Down ? 2
 
 	 Dealer your turn 
 
@@ -246,7 +246,7 @@
 				 1 - Hit 
 				 2 - Stand 
 				 3 - Split 
-				 4 - Double Down ?1
+				 4 - Double Down ? 1
 	 Player 1 : 
 		 - Hand 1 : ('9 ♠', 'Q ♣', '10 ♥')
 		 - Value : 29
