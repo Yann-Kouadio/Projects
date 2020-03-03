@@ -1,59 +1,62 @@
 from random import shuffle, randint
 
+# Global variables
+default_deposit_amount = 50
+default_bet_amount = 10
+
+
 class Deck:
     """
         Create a deck of card
     """
 
     __card_symbols = {'club': '♣', 'diamond': '♦', 'heart': '♥', 'spade': '♠'}
-    __cards = list()
 
     def __init__(self, cards=None):
         """ Create a deck """
+        self.__cards = list()
+
         if cards is not None:
             if len(cards) == 52:
-                Deck.__cards = cards
+                self.__cards = cards
         else:
             self.__create_card()
 
-    @staticmethod
-    def __create_card():
+    def __create_card(self):
         """ Combine the symbols and the values """
         numbers = list(range(2, 11)) + list(['J', 'Q', 'K', 'A'])
         new_deck = list()
 
         for symbol in Deck.__card_symbols.values():
-            new_deck += list(map(lambda x: f"{x} {symbol}", numbers))
+            new_deck += list(map(lambda value: f"{value} {symbol}", numbers))
 
-        Deck.__cards = new_deck
+        self.__cards = new_deck
 
-    @staticmethod
-    def get_cards():
+    @property
+    def cards(self):
         """ retrieve the deck """
-        return Deck.__cards
+        return self.__cards
 
-    @staticmethod
-    def shuffle_cards(number):
+    def shuffle_cards(self, number):
         """ shuffle the card """
         for i in range(number):
-            shuffle(Deck.__cards)
+            shuffle(self.__cards)
 
     def combine_deck(self, new_deck):
-        """ fuse the deck and return a new one """
-        self.__cards += new_deck.get_cards()
-
-        return Deck(cards=self.__cards)
+        """ fuse the two decks """
+        self.__cards += new_deck.cards
 
     def __str__(self):
         """ overwrite the default str: Give detail when using print on the class """
         result = ''
 
-        for i in range(0, len(Deck.__cards), 13):
-            result += f"{Deck.__cards[i:i + 13]} \n"
+        for i in range(0, len(self.__cards), 13):
+            result += f"{self.__cards[i:i + 13]} \n"
 
         return result
 
-class Players:
+
+class Player:
     """
         Create a player
     """
@@ -61,31 +64,40 @@ class Players:
     def __init__(self, name, deposit):
         """ Initialize player variables """
         self.__name = name
-        self.__deposit = deposit
-        self.__total_bet = 0
+        self.__set_deposit(value=deposit)
+        self.__set_total_bet(value=0)
         self.__hand_list = list()
 
     def create_hand(self, bet=0):
         """ add a new hand to the hand list """
 
         hand = Hand(bet=bet)
+
         # Add hand to the list
         self.__hand_list.append(hand)
 
         # Update total bet
-        self.update_total_bet(bet)
+        self.__set_total_bet(bet)
 
     def delete_hand(self, value):
         """ delete a specific hand from the hand list """
         self.__hand_list.pop(self.__hand_list.index(value))
 
-    def update_total_bet(self, value):
+    def __set_total_bet(self, value):
         """ Update total bet """
-        self.__total_bet += value
+        self.__total_bet = value
 
-    def update_deposit(self, value):
+    def __get_total_bet(self):
+        """ Return Total Bet """
+        return self.__total_bet
+
+    def __set_deposit(self, value):
         """ Update deposit """
-        self.__deposit += value
+        self.__deposit = value
+    
+    def __get_deposit(self):
+        """ Return Deposit """
+        return self.__deposit
 
     def split_hand(self, value):
         """ Split hand into two new hand """
@@ -93,17 +105,17 @@ class Players:
 
         for hand in self.__hand_list:
             if hand == value:
-                hand_number = hand.get_number()
+                hand_number = hand.number
 
                 # Create a new hand for each card
-                for card in hand.get_hand():
-                    as_values_list = value.get_as_values()
+                for card in hand.hand:
+                    as_values_list = value.as_values
                     as_value = None
 
                     if len(as_values_list) > 0:
                         as_value = [as_values_list.pop()]
 
-                    new_hand = Hand(bet=hand.get_bet(), hand=card, as_values=as_value, split=True, number=hand_number)
+                    new_hand = Hand(bet=hand.bet, card=card, as_values=as_value, split=True, number=hand_number)
 
                     new_hand_list.append(new_hand)
 
@@ -113,67 +125,79 @@ class Players:
                 new_hand_list.append(hand)
 
         # Update Total Bet
-        self.update_total_bet(value=value.get_bet())
+        self.__set_total_bet(value=value.bet)
 
         self.__hand_list = new_hand_list
 
     def empty_hand(self):
         """ Empty the total bet and the hand list """
-        self.__total_bet = 0
+        self.__set_total_bet(value=0)
         self.__hand_list = list()
 
-    def get_name(self):
+    # Properties
+    @property
+    def name(self):
         """ Return Name """
         return self.__name
 
-    def get_deposit(self):
-        """ Return Deposit """
-        return self.__deposit
-
-    def get_total_bet(self):
-        """ Return Total Bet """
-        return self.__total_bet
-
-    def get_hands(self):
-        """ Return the list of hand """
+    @property
+    def hands(self):
+        """ Return a copy of the hand list"""
         return self.__hand_list
+
+    total_bet = property(__get_total_bet, __set_total_bet)
+    deposit = property(__get_deposit, __set_deposit)
+
 
 class Hand:
     """
         Create hand
     """
 
-    def __init__(self, bet=0, hand=None, as_values=None, split=False, number=1):
-        self.__bet = bet
+    def __init__(self, bet=0, card=None, as_values=None, split=False, number=1):
         self.__hand_result = 0
-        self.__has_won = None
         self.__number = number
-
-        self.__hand = None
-        if hand is not None:
-            self.__hand = (hand,)
-
-        self.__as_values = list()
-        if as_values is not None:
-            self.__as_values = as_values
-
         self.__has_been_split = split
 
-    def update_hand(self, value):
+        self.__set_hand(value=card)
+        self.__set_bet(value=bet)
+        self.__set_has_won(value=None)
+
+        self.__as_values = list() if as_values is None else as_values
+
+    def __set_hand(self, value):
         """ Update hand; hand has to be stored as a tuple """
-        self.__hand = value
+
+        self.__hand = None
+
+        if value is not None and not isinstance(value, tuple):
+            self.__hand = (value,)
+        elif isinstance(value, tuple):
+            self.__hand = value
+
+    def __get_hand(self):
+        """ Return hand """
+        return self.__hand
+
+    def __set_bet(self, value):
+        """ Update bet """
+        self.__bet = value
+
+    def __get_bet(self):
+        """ Return Bet """
+        return self.__bet
+
+    def __set_has_won(self, value):
+        """ Update hand state """
+        self.__has_won = value
+
+    def __get_has_won(self):
+        """ Return hand state result """
+        return self.__has_won
 
     def update_as_values(self, value):
         """ Update as_values list """
         self.__as_values.append(value)
-
-    def update_bet(self, value):
-        """ Update bet """
-        self.__bet += value
-
-    def update_has_won(self, value):
-        """ Update hand state """
-        self.__has_won = value
 
     def compute_score(self):
         """ Compute and return the current score """
@@ -225,33 +249,31 @@ class Hand:
 
         return result
 
-    def get_hand(self):
-        """ Return hand """
-        return self.__hand
-
-    def get_as_values(self):
-        """ Return the list of AS value """
-        return self.__as_values
-
-    def get_bet(self):
-        """ Return Bet """
-        return self.__bet
-
-    def get_hand_result(self):
+    # Properties
+    @property
+    def hand_result(self):
         """ Return hand result """
         return self.__hand_result
 
-    def get_has_won(self):
-        """ Return hand state result """
-        return self.__has_won
+    @property
+    def number(self):
+        """ Return the hand number """
+        return self.__number
 
-    def get_has_been_split(self):
+    @property
+    def has_been_split(self):
         """ Return has_been_split """
         return self.__has_been_split
 
-    def get_number(self):
-        """ Return number """
-        return self.__number
+    @property
+    def as_values(self):
+        """ Return the list of AS value """
+        return self.__as_values
+
+    hand = property(__get_hand, __set_hand)
+    bet = property(__get_bet, __set_bet)
+    has_won = property(__get_has_won, __set_has_won)
+    
 
 def players_variables_init():
     """
@@ -279,7 +301,7 @@ def players_variables_init():
             player_name = input(f"\t Player {i + 1}, please enter your name (default = player {i + 1}) : ").capitalize()
             # Verify that the name of the player does not exist
             if len(player_name) > 0:
-                if player_name not in list(map(lambda player_: player_.get_name(), player_dict.values())) + ['Dealer']:
+                if player_name not in list(map(lambda player_: player_.name, player_dict.values())) + ['Dealer']:
                     break
                 else:
                     print("\t\t - This name is already used")
@@ -289,21 +311,27 @@ def players_variables_init():
                     break
 
         while True:
+            player_deposit = input(f"\t {player_name}, please enter your deposit ( >= {default_deposit_amount}) : ")
+
             try:
-                player_deposit = int(input(f"\t {player_name}, please enter your deposit ( >= 50) : "))
+                player_deposit = int(player_deposit)
             except ValueError:
-                print("\t\t - Please enter a number >= 50")
+                if len(player_deposit) == 0:
+                    player_deposit = default_deposit_amount
+                    break
+                else:
+                    print(f"\t\t - Please enter a number >= {default_deposit_amount}")
             else:
-                if player_deposit < 50:
-                    player_deposit = 50
+                if player_deposit < default_deposit_amount:
+                    player_deposit = default_deposit_amount
 
                 break
 
         # Create a new player
-        player = Players(name=player_name, deposit=player_deposit)
+        player = Player(name=player_name, deposit=player_deposit)
 
         # Test the new object
-        print(f"\t\t - {player.get_name()}, your deposit is {player.get_deposit()}")
+        print(f"\t\t - {player.name}, your deposit is {player.deposit}")
         print("")
 
         # Add it to the dict player
@@ -312,9 +340,10 @@ def players_variables_init():
         j = i
 
     # Create the computer
-    player_dict[j + 1] = Players(name='Dealer', deposit=0)
+    player_dict[j + 1] = Player(name='Dealer', deposit=0)
 
     return player_dict
+
 
 def deck_variables_init():
     """
@@ -334,13 +363,14 @@ def deck_variables_init():
         if i == 0:
             result = deck
         else:
-            result = result.combine_deck(new_deck=deck)
+            result.combine_deck(new_deck=deck)
 
         print(f"\t Deck {i + 1} -> {numb} shuffles", end="")
 
     print('\n')
 
     return result
+
 
 def ask_for_bet(players_dict):
     """
@@ -362,7 +392,7 @@ def ask_for_bet(players_dict):
     for i in range(len(keys) - 1):
         player = players_dict[keys[i]]
 
-        input_result = input(f"\t {player.get_name()}, please enter your bet (min = 10) \n"
+        input_result = input(f"\t {player.name}, please enter your bet (min = {default_bet_amount}) \n"
                              f"\t\t - Enter any negative value if you don't want to play this turn \n"
                              f"\t\t - Enter 'leave' if you want to leave the table \n"
                              f"\t\t - Enter 'stop' if you want to end the game : ").strip()
@@ -376,34 +406,34 @@ def ask_for_bet(players_dict):
                     break
                 elif input_result.lower() == 'leave':
                     del players_dict[keys[i]]
-                    print(f"\n\t *** {player.get_name()} has left the table ***")
+                    print(f"\n\t *** {player.name} has left the table ***")
                     break
                 elif len(input_result) == 0:
                     # Create a new hand with this bet
-                    player.create_hand(bet=10)
+                    player.create_hand(bet=default_bet_amount)
                     # Add this player to the new dict of player
                     new_players_dict[count] = player
                     count += 1
                     break
                 else:
-                    input_result = input("\t\t\t - Please enter a number >= 10 : ")
+                    input_result = input(f"\t\t\t - Please enter a number >= {default_bet_amount} : ")
             else:
-                if 10 <= result <= player.get_deposit():
+                if default_bet_amount <= result <= player.deposit:
                     # Create a new hand with this bet
                     player.create_hand(bet=result)
                     # Add this player to the new dict of player
                     new_players_dict[count] = player
                     count += 1
                     break
-                elif result > player.get_deposit():
+                elif result > player.deposit:
                     input_result = input("\t\t\t - You cannot bet more than your deposit \n"
                                          "\t\t - Please enter a new bet : ")
 
                 elif result < 0:
-                    print(f"\n\t *** {player.get_name()} does not play this turn ***")
+                    print(f"\n\t *** {player.name} does not play this turn ***")
                     break
                 else:
-                    input_result = input("\t\t\t - Please enter a number >= 10")
+                    input_result = input(f"\t\t\t - Please enter a number >= {default_bet_amount}")
 
         j = i
         print('')
@@ -418,32 +448,34 @@ def ask_for_bet(players_dict):
 
     return end_game, new_players_dict
 
+
 def deal_cards(deck, players_dict, first_deal=True, player_id=None, hand=None):
     """
        Deal the card
     """
-    cards = deck.get_cards()
+    cards = deck.cards
 
     if first_deal:
         # Deal one card at the time until each players have two
         for i in list(range(len(players_dict))) * 2:
             player = players_dict[i]
-            player_hands = player.get_hands()
+            player_hands = player.hands
 
             # Since it is the first turn each player has only one hand
             # Insert each card to the hand of the player
             hand = player_hands[0]
-            hand_result = hand.get_hand()
+            hand_result = hand.hand
 
             if hand_result:
-                hand.update_hand(hand_result + (cards.pop(0),))
+                hand.hand = hand_result + (cards.pop(0),)
             else:
-                hand.update_hand((cards.pop(0),))
+                hand.hand = (cards.pop(0),)
     else:
         if player_id is not None and hand is not None:
-            hand.update_hand(hand.get_hand() + (cards.pop(0),))
+            hand.hand = hand.hand + (cards.pop(0),)
         else:
             raise TypeError("deal_cards() missing 2 required positional argument: ('player_id', 'hand')")
+
 
 def update_player_deposit(player, hand, action, reward=0):
     """
@@ -451,11 +483,12 @@ def update_player_deposit(player, hand, action, reward=0):
     """
 
     if action in ('burst', 'lost'):
-        player.update_deposit(value=-hand.get_bet())
+        player.deposit -= hand.bet
     elif action == 'win':
-        player.update_deposit(value=reward)
+        player.deposit += reward
 
-    print(f"\t\t - Your deposit is {player.get_deposit()} \n")
+    print(f"\t\t - Your deposit is {player.deposit} \n")
+
 
 def check_player_state(players_dict, full_check=True, player_id=None):
     """
@@ -464,24 +497,24 @@ def check_player_state(players_dict, full_check=True, player_id=None):
 
     def check(player_, hand_burst_):
         player_out_ = False
-        player_hands = player_.get_hands()
+        player_hands = player_.hands
 
         for hand in player_hands:
-            hand_result = hand.get_hand_result()
+            hand_result = hand.hand_result
 
             if hand_result > 21:
-                print(f"\t ### {player_.get_name()} -> Hand {hand.get_number()} burst")
+                print(f"\t ### {player_.name} -> Hand {hand.number} burst")
                 # Update and display player deposit
                 update_player_deposit(player=player_, hand=hand, action='burst')
                 # Delete the current hand
                 player_.delete_hand(value=hand)
                 hand_burst_.append(True)
 
-                if len(player_.get_hands()) <= 0:
+                if len(player_.hands) <= 0:
                     player_out_ = True
 
             elif hand_result == 21:
-                hand.update_has_won(value=True)
+                hand.has_won = True
 
         return player_out_
 
@@ -509,6 +542,7 @@ def check_player_state(players_dict, full_check=True, player_id=None):
 
     return player_out, hand_burst
 
+
 def insert_as_value():
     """
        Ask to the player the value of the AS card
@@ -520,6 +554,7 @@ def insert_as_value():
 
     return int(as_value)
 
+
 def compute_player_hand_score(player, hand, display_previous_as=False):
     """
         Compute current player hand score
@@ -529,16 +564,17 @@ def compute_player_hand_score(player, hand, display_previous_as=False):
     has_as, number = hand.has_as()
 
     if has_as:
-        player_name = player.get_name()
+        player_name = player.name
 
         # Verify the the AS value does not already exist
-        as_value_len = len(hand.get_as_values())
+        as_value_len = len(hand.as_values)
 
         if as_value_len < number:
             if player_name != 'Dealer':
-                print(f"\t {player_name} you have a AS card -> Hand {hand.get_number()} -> {hand.get_hand()} : ")
+                print(f"\t {player_name} you have a AS card -> Hand {hand.number} -> {hand.hand} : ")
+
                 if display_previous_as:
-                    print(f"\t First AS : {hand.get_as_values()}")
+                    print(f"\t First AS : {hand.as_values}")
 
             for i in range(as_value_len, number):
                 # If it is not the dealer ask for the value of the AS card
@@ -547,7 +583,7 @@ def compute_player_hand_score(player, hand, display_previous_as=False):
 
                 # Find it for the dealer
                 else:
-                    as_value = hand.get_as_values()
+                    as_value = hand.as_values
 
                     if as_value:
                         if 11 + sum(as_value) > 21:
@@ -564,30 +600,32 @@ def compute_player_hand_score(player, hand, display_previous_as=False):
     else:
         hand.compute_score()
 
+
 def display_hand(player, hand, first_round=False):
     """
         Display the current player hand
     """
 
-    print(f"\t {player.get_name()} : ")
+    print(f"\t {player.name} : ")
 
     # Display player hand
-    if player.get_name() != 'Dealer':
-        print(f"\t\t - Hand {hand.get_number()} : {hand.get_hand()}")
-        print(f"\t\t - Value : {hand.get_hand_result()}")
-        print(f"\t\t - Hand Bet : {hand.get_bet()}")
-        print(f"\t\t - Total Bet : {player.get_total_bet()}")
-        print(f"\t\t - Deposit : {player.get_deposit()}")
+    if player.name != 'Dealer':
+        print(f"\t\t - Hand {hand.number} : {hand.hand}")
+        print(f"\t\t - Value : {hand.hand_result}")
+        print(f"\t\t - Hand Bet : {hand.bet}")
+        print(f"\t\t - Total Bet : {player.total_bet}")
+        print(f"\t\t - Deposit : {player.deposit}")
     # Display dealer hand
     else:
         # Only display one card for the first round
         if first_round:
-            print(f"\t\t - Hand : {hand.get_hand()[1]}")
+            print(f"\t\t - Hand : {hand.hand[1]}")
         else:
-            print(f"\t\t - Hand : {hand.get_hand()}")
-            print(f"\t\t - Value : {hand.get_hand_result()}")
+            print(f"\t\t - Hand : {hand.hand}")
+            print(f"\t\t - Value : {hand.hand_result}")
 
     print('')
+
 
 def ask_for_move():
     """
@@ -600,10 +638,11 @@ def ask_for_move():
                        f"\t\t\t\t 3 - Split \n"
                        f"\t\t\t\t 4 - Double Down ? ")
 
-    while move_input not in '1234' or len(move_input) < 1:
+    while move_input not in '1234' or len(move_input) != 1:
         move_input = input("\t\t\t\t\t - Please choose between (1 - 4) : ")
 
     return move_input
+
 
 def dealer_turn_play(players_dict, player_id, deck):
     """
@@ -613,8 +652,8 @@ def dealer_turn_play(players_dict, player_id, deck):
 
     player = players_dict[player_id]
 
-    hand = player.get_hands()[0]
-    hand_score = hand.get_hand_result()
+    hand = player.hands[0]
+    hand_score = hand.hand_result
 
     while hand_score < 17:
         print("\t\t\t - Dealer Hit")
@@ -624,34 +663,35 @@ def dealer_turn_play(players_dict, player_id, deck):
         # Display the new hand
         display_hand(player=player, hand=hand)
         # Get new Score
-        hand_score = hand.get_hand_result()
+        hand_score = hand.hand_result
 
     if hand_score <= 21:
         print("\t\t\t - Dealer Stand \n")
 
-def display_result(player, dealer, hand, result, blackjack=False):
+
+def display_result(player, dealer, hand, result):
     """
         Display the final result
     """
 
-    player_name = player.get_name()
-    player_hand = hand.get_hand()
-    player_hand_number = hand.get_number()
-    player_hand_result = hand.get_hand_result()
-    player_bet = hand.get_bet()
-    dealer_hand = dealer.get_hands()[0].get_hand()
-    dealer_hand_result = dealer.get_hands()[0].get_hand_result()
+    player_name = player.name
+    player_hand = hand.hand
+    player_hand_number = hand.number
+    player_hand_result = hand.hand_result
+    player_bet = hand.bet
+    dealer_hand = dealer.hands[0].hand
+    dealer_hand_result = dealer.hands[0].hand_result
 
     if result == 'draw':
         print(f"\n\t {player_name} : *** Round draw ***")
         print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
         print(f"\t\t - Dealer Hand : {dealer_hand} -> {dealer_hand_result}")
-        print(f"\t\t - Deposit : {player.get_deposit()} \n")
+        print(f"\t\t - Deposit : {player.deposit} \n")
 
     elif result == 'win':
         print(f"\n\t {player_name} : *** Round won ***")
 
-        if blackjack:
+        if hand.has_blackjack():
             print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result} *** Blackjacks ***")
             reward = int((player_bet * 150) / 100)
         else:
@@ -671,12 +711,13 @@ def display_result(player, dealer, hand, result, blackjack=False):
 
         update_player_deposit(player=player, hand=hand, action='lost', reward=player_bet)
 
+
 def dealer_hand_vs_player_hand(dealer, players_dict):
     """
        Compare the hand of the dealer and player to find winner
     """
-    dealer_hand = dealer.get_hands()[0]
-    dealer_hand_result = dealer_hand.get_hand_result()
+    dealer_hand = dealer.hands[0]
+    dealer_hand_result = dealer_hand.hand_result
 
     if dealer_hand_result > 21:
         print("\t\t ### Dealer Burst")
@@ -684,33 +725,34 @@ def dealer_hand_vs_player_hand(dealer, players_dict):
         # Since we have deleted all the players that has been burst we can say that
         # all the player inside players_dict won
         for player in players_dict.values():
-            if player.get_name() != 'Dealer':
-                player_hands = player.get_hands()
+            if player.name != 'Dealer':
+                player_hands = player.hands
 
                 for hand in player_hands:
                     if hand.has_blackjack():
-                        display_result(player=player, dealer=dealer, hand=hand, result='win', blackjack=True)
+                        display_result(player=player, dealer=dealer, hand=hand, result='win')
                     else:
                         display_result(player=player, dealer=dealer, hand=hand, result='win')
     else:
         # Loop through all the players and choose players that hand beat the dealer hand
         for player in players_dict.values():
-            if player.get_name() != 'Dealer':
-                player_hands = player.get_hands()
+            if player.name != 'Dealer':
+                player_hands = player.hands
 
                 for hand in player_hands:
-                    player_hand_result = hand.get_hand_result()
+                    player_hand_result = hand.hand_result
 
                     if player_hand_result > dealer_hand_result:
                         display_result(player=player, dealer=dealer, hand=hand, result='win')
                     elif player_hand_result == dealer_hand_result:
                         # If player has blackjack and dealer not, player win
                         if hand.has_blackjack() and not dealer_hand.has_blackjack():
-                            display_result(player=player, dealer=dealer, hand=hand, result='win', blackjack=True)
+                            display_result(player=player, dealer=dealer, hand=hand, result='win')
                         else:
                             display_result(player=player, dealer=dealer, hand=hand, result='draw')
                     else:
                         display_result(player=player, dealer=dealer, hand=hand, result='lost')
+
 
 def is_bankrupt(player):
     """
@@ -718,11 +760,12 @@ def is_bankrupt(player):
     """
     result = False
 
-    if player.get_deposit() < 10 and player.get_name() != 'Dealer':
+    if player.deposit < default_bet_amount and player.name != 'Dealer':
         result = True
-        print(f"\n\t Sorry {player.get_name()} you don't have enough money to continue \n")
+        print(f"\n\t Sorry {player.name} you don't have enough money to continue \n")
 
     return result
+
 
 def can_double_down(player, hand):
     """
@@ -730,14 +773,14 @@ def can_double_down(player, hand):
     """
 
     result = False
-    current_bet = hand.get_bet()
-    deposit = player.get_deposit()
-    total_bet = player.get_total_bet()
-    hand_list = player.get_hands()
+    current_bet = hand.bet
+    deposit = player.deposit
+    total_bet = player.total_bet
+    hand_list = player.hands
 
-    if len(hand_list) == 1 and len(hand.get_hand()) == 2:
-        if not hand.get_has_been_split():
-            if total_bet + 10 <= deposit:
+    if len(hand_list) == 1 and len(hand.hand) == 2:
+        if not hand.has_been_split:
+            if total_bet + default_bet_amount <= deposit:
                 while True:
                     try:
                         amount = int(input(f"\t\t\t - Please insert an amount up to '{current_bet}' : "))
@@ -750,8 +793,9 @@ def can_double_down(player, hand):
                             if amount + total_bet > deposit:
                                 print("\t\t\t\t - Sorry you don't have enough money to bet this amount")
                             else:
-                                hand.update_bet(value=amount)
-                                player.update_total_bet(value=amount)
+                                # Update value
+                                hand.bet += amount
+                                player.total_bet += amount
                                 result = True
                                 break
 
@@ -768,15 +812,16 @@ def can_double_down(player, hand):
 
     return result
 
+
 def can_split(player, hand):
     """
         check if the player can split its card
     """
     result = False
 
-    if len(hand.get_hand()) == 2:
+    if len(hand.hand) == 2:
         if hand.has_double():
-            if player.get_total_bet() + hand.get_bet() <= player.get_deposit():
+            if player.total_bet + hand.bet <= player.deposit:
                 player.split_hand(value=hand)
                 result = True
             else:
@@ -790,6 +835,7 @@ def can_split(player, hand):
 
     return result
 
+
 def loop_through_player_hands(deck, current_player_dict, i):
     """
         Does through all the current players hands and ask what move
@@ -800,13 +846,13 @@ def loop_through_player_hands(deck, current_player_dict, i):
     stop = False
 
     # Loop through all the player hands
-    for hand in player.get_hands():
+    for hand in player.hands:
         stop = False
         print('')
 
         # Check if the player current hand has only one card
         # This one card is the result of splitting
-        if len(hand.get_hand()) == 1 and hand.get_has_been_split() is True:
+        if len(hand.hand) == 1 and hand.has_been_split is True:
             # Deal one card more
             deal_cards(deck=deck, players_dict=current_player_dict, first_deal=False, player_id=i, hand=hand)
 
@@ -822,11 +868,11 @@ def loop_through_player_hands(deck, current_player_dict, i):
             if True in hand_burst or player_out:
                 stop = True
         # if the player have more than one car on a split hand it means that hand has already been played
-        elif len(hand.get_hand()) > 1 and hand.get_has_been_split() is True:
+        elif len(hand.hand) > 1 and hand.has_been_split is True:
             stop = True
 
         while not stop:
-            print(f"\t\t\t - Hand {hand.get_number()} {hand.get_hand()} : Value {hand.get_hand_result()}")
+            print(f"\t\t\t - Hand {hand.number} {hand.hand} : Value {hand.hand_result}")
 
             # Ask if the player want to  hit or stand
             move_input = ask_for_move()
@@ -884,6 +930,7 @@ def loop_through_player_hands(deck, current_player_dict, i):
 
     return stop
 
+
 def start_game(deck, players_dict, game_number):
     """
        Start running the game
@@ -902,7 +949,7 @@ def start_game(deck, players_dict, game_number):
 
         # Display first hands
         for player in current_player_dict.values():
-            hand = player.get_hands()[0]
+            hand = player.hands[0]
             # Compute player hand score
             compute_player_hand_score(player=player, hand=hand)
 
@@ -922,8 +969,8 @@ def start_game(deck, players_dict, game_number):
                 player = current_player_dict[i]
 
                 # Display this only this the current player haven't won yet
-                if not player.get_hands()[0].get_has_won():
-                    print(f"\t {player.get_name()} your turn")
+                if not player.hands[0].has_won:
+                    print(f"\t {player.name} your turn")
 
                     # loop through each player hand and ask then what move they want
                     loop_through_player_hands(deck=deck, current_player_dict=current_player_dict, i=i)
@@ -933,8 +980,8 @@ def start_game(deck, players_dict, game_number):
         # Dealer turns
         dealer_id = j + 1
         player = current_player_dict[dealer_id]
-        hand = player.get_hands()[0]
-        print(f"\t {player.get_name()} your turn \n")
+        hand = player.hands[0]
+        print(f"\t {player.name} your turn \n")
 
         # Display dealer hand
         display_hand(player=player, hand=hand)
@@ -963,7 +1010,7 @@ def start_game(deck, players_dict, game_number):
         # Check if we have enough cards to play again
         # Check if we have enough cards to play again
         # Let assume that each player need at least 3 cards to play
-        if len(deck.get_cards()) < len(players_dict) * 3:
+        if len(deck.cards) < len(players_dict) * 3:
             end_game = True
             print("\t Not enough cards to continue")
 
@@ -972,6 +1019,7 @@ def start_game(deck, players_dict, game_number):
         players_dict[key].empty_hand()
 
     return not end_game, players_dict
+
 
 def game_init():
     """
