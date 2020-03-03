@@ -12,15 +12,11 @@ class Deck:
 
     __card_symbols = {'club': '♣', 'diamond': '♦', 'heart': '♥', 'spade': '♠'}
 
-    def __init__(self, cards=None):
+    def __init__(self):
         """ Create a deck """
         self.__cards = list()
 
-        if cards is not None:
-            if len(cards) == 52:
-                self.__cards = cards
-        else:
-            self.__create_card()
+        self.__create_card()
 
     def __create_card(self):
         """ Combine the symbols and the values """
