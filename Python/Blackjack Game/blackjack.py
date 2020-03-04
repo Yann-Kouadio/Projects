@@ -116,8 +116,6 @@ class Player:
 
                     new_hand = Hand(bet=hand.bet, card=card, as_values=as_value, split=True, number=hand_number)
 
-                    print(hand_number)
-
                     new_hand_list.append(new_hand)
 
                     # Increase hand number
@@ -715,9 +713,6 @@ def loop_through_player_hands(deck, players_dict, key, player, hand_tracker=0):
     if hand_tracker >= len(hands):
         return True
     else:
-        print(len(hands))
-
-
         # Get player current hand
         hand = hands[hand_tracker]
 
