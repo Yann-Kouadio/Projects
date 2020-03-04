@@ -1,8 +1,10 @@
 from random import shuffle, randint
+from collections import OrderedDict
 
 # Global variables
 default_deposit_amount = 50
 default_bet_amount = 10
+default_bank_name = "Dealer".capitalize()
 
 
 class Deck:
@@ -15,7 +17,6 @@ class Deck:
     def __init__(self):
         """ Create a deck """
         self.__cards = list()
-
         self.__create_card()
 
     def __create_card(self):
@@ -63,6 +64,7 @@ class Player:
         self.__set_deposit(value=deposit)
         self.__set_total_bet(value=0)
         self.__hand_list = list()
+        self.__hand_number_list = [1]
 
     def create_hand(self, bet=0):
         """ add a new hand to the hand list """
@@ -90,7 +92,7 @@ class Player:
     def __set_deposit(self, value):
         """ Update deposit """
         self.__deposit = value
-    
+
     def __get_deposit(self):
         """ Return Deposit """
         return self.__deposit
@@ -101,10 +103,11 @@ class Player:
 
         for hand in self.__hand_list:
             if hand == value:
+
                 hand_number = hand.number
 
                 # Create a new hand for each card
-                for card in hand.hand:
+                for card in hand.cards:
                     as_values_list = value.as_values
                     as_value = None
 
@@ -113,10 +116,17 @@ class Player:
 
                     new_hand = Hand(bet=hand.bet, card=card, as_values=as_value, split=True, number=hand_number)
 
+                    print(hand_number)
+
                     new_hand_list.append(new_hand)
 
                     # Increase hand number
-                    hand_number += 1
+                    if hand_number+1 not in self.__hand_number_list:
+                        hand_number += 1
+                        self.__hand_number_list.append(hand_number)
+                    else:
+                        hand_number = self.__hand_number_list[-1]
+
             else:
                 new_hand_list.append(hand)
 
@@ -129,6 +139,7 @@ class Player:
         """ Empty the total bet and the hand list """
         self.__set_total_bet(value=0)
         self.__hand_list = list()
+        self.__hand_number_list = [1]
 
     # Properties
     @property
@@ -266,10 +277,37 @@ class Hand:
         """ Return the list of AS value """
         return self.__as_values
 
-    hand = property(__get_hand, __set_hand)
+    cards = property(__get_hand, __set_hand)
     bet = property(__get_bet, __set_bet)
     has_won = property(__get_has_won, __set_has_won)
-    
+
+
+def deck_variables_init():
+    """
+        Initialize the deck
+    """
+    number = randint(2, 4)
+    result = None
+
+    print(f"\t ### We have a combination of {number} decks of cards")
+    print(f"\t ### Each deck will be randomly shuffled n (between 4 and 6) times")
+
+    # Create a deck and shuffle it, and append then together
+    for i in range(number):
+        deck = Deck()
+        numb = randint(4, 6)
+        deck.shuffle_cards(number=numb)
+        if i == 0:
+            result = deck
+        else:
+            result.combine_deck(new_deck=deck)
+
+        print(f"\t Deck {i + 1} -> {numb} shuffles", end="")
+
+    print('\n')
+
+    return result
+
 
 def players_variables_init():
     """
@@ -288,7 +326,8 @@ def players_variables_init():
 
     print('')
 
-    player_dict = {}
+    player_dict = OrderedDict()
+
     # Track dealer id
     j = 0
 
@@ -297,7 +336,7 @@ def players_variables_init():
             player_name = input(f"\t Player {i + 1}, please enter your name (default = player {i + 1}) : ").capitalize()
             # Verify that the name of the player does not exist
             if len(player_name) > 0:
-                if player_name not in list(map(lambda player_: player_.name, player_dict.values())) + ['Dealer']:
+                if player_name not in list(map(lambda player_: player_.name, player_dict.values())) + [default_bank_name]:
                     break
                 else:
                     print("\t\t - This name is already used")
@@ -336,36 +375,9 @@ def players_variables_init():
         j = i
 
     # Create the computer
-    player_dict[j + 1] = Player(name='Dealer', deposit=0)
+    player_dict[j + 1] = Player(name=default_bank_name, deposit=0)
 
     return player_dict
-
-
-def deck_variables_init():
-    """
-        Initialize the deck
-    """
-    number = randint(2, 4)
-    result = None
-
-    print(f"\t ### We have a combination of {number} decks of cards")
-    print(f"\t ### Each deck will be randomly shuffled n (between 4 and 6) times")
-
-    # Create a deck and shuffle it, and append then together
-    for i in range(number):
-        deck = Deck()
-        numb = randint(4, 6)
-        deck.shuffle_cards(number=numb)
-        if i == 0:
-            result = deck
-        else:
-            result.combine_deck(new_deck=deck)
-
-        print(f"\t Deck {i + 1} -> {numb} shuffles", end="")
-
-    print('\n')
-
-    return result
 
 
 def ask_for_bet(players_dict):
@@ -374,11 +386,14 @@ def ask_for_bet(players_dict):
     """
 
     end_game = False
-    new_players_dict = {}
+    new_players_dict = OrderedDict()
+
     # track new dict key
     count = 0
+
     # Track dealer id
     j = 0
+
     # Current dict key
     # Use the key to access the dict value to avoid KeyError when a player has been
     # deleted from the game
@@ -445,98 +460,24 @@ def ask_for_bet(players_dict):
     return end_game, new_players_dict
 
 
-def deal_cards(deck, players_dict, first_deal=True, player_id=None, hand=None):
+def deal_card(deck, hand):
     """
        Deal the card
     """
+
+    # Get th list of cards from the deck class
     cards = deck.cards
 
-    if first_deal:
-        # Deal one card at the time until each players have two
-        for i in list(range(len(players_dict))) * 2:
-            player = players_dict[i]
-            player_hands = player.hands
+    # Get the current player hand cards
+    hand_cards = hand.cards
 
-            # Since it is the first turn each player has only one hand
-            # Insert each card to the hand of the player
-            hand = player_hands[0]
-            hand_result = hand.hand
-
-            if hand_result:
-                hand.hand = hand_result + (cards.pop(0),)
-            else:
-                hand.hand = (cards.pop(0),)
+    # Check if hand_cards is not None,
+    # Deal another card and combine the two cards to form a hand
+    if hand_cards is not None:
+        hand.cards = hand_cards + (cards.pop(0),)
     else:
-        if player_id is not None and hand is not None:
-            hand.hand = hand.hand + (cards.pop(0),)
-        else:
-            raise TypeError("deal_cards() missing 2 required positional argument: ('player_id', 'hand')")
-
-
-def update_player_deposit(player, hand, action, reward=0):
-    """
-        Update player deposit
-    """
-
-    if action in ('burst', 'lost'):
-        player.deposit -= hand.bet
-    elif action == 'win':
-        player.deposit += reward
-
-    print(f"\t\t - Your deposit is {player.deposit} \n")
-
-
-def check_player_state(players_dict, full_check=True, player_id=None):
-    """
-       Verify a player can still play or if we have a winner
-    """
-
-    def check(player_, hand_burst_):
-        player_out_ = False
-        player_hands = player_.hands
-
-        for hand in player_hands:
-            hand_result = hand.hand_result
-
-            if hand_result > 21:
-                print(f"\t ### {player_.name} -> Hand {hand.number} burst")
-                # Update and display player deposit
-                update_player_deposit(player=player_, hand=hand, action='burst')
-                # Delete the current hand
-                player_.delete_hand(value=hand)
-                hand_burst_.append(True)
-
-                if len(player_.hands) <= 0:
-                    player_out_ = True
-
-            elif hand_result == 21:
-                hand.has_won = True
-
-        return player_out_
-
-    player_out = False
-    hand_burst = list()
-
-    # Check for all the players
-    if full_check:
-        # Loop through all the players except the dealer
-        for i in range(len(players_dict) - 1):
-            player = players_dict[i]
-            player_out = check(player_=player, hand_burst_=hand_burst)
-
-            if player_out:
-                del players_dict[i]
-    else:
-        if player_id is not None:
-            player = players_dict[player_id]
-            player_out = check(player_=player, hand_burst_=hand_burst)
-
-            if player_out:
-                del players_dict[player_id]
-        else:
-            raise TypeError("check_player_state() missing 1 required positional argument: 'player_id'")
-
-    return player_out, hand_burst
+        # Deal the first card
+        hand.cards = (cards.pop(0),)
 
 
 def insert_as_value():
@@ -551,7 +492,7 @@ def insert_as_value():
     return int(as_value)
 
 
-def compute_player_hand_score(player, hand, display_previous_as=False):
+def compute_player_hand_score(player, hand):
     """
         Compute current player hand score
     """
@@ -566,15 +507,15 @@ def compute_player_hand_score(player, hand, display_previous_as=False):
         as_value_len = len(hand.as_values)
 
         if as_value_len < number:
-            if player_name != 'Dealer':
-                print(f"\t {player_name} you have a AS card -> Hand {hand.number} -> {hand.hand} : ")
+            if player_name != default_bank_name:
+                print(f"\t {player_name} you have a AS card -> Hand {hand.number} -> {hand.cards} : ")
 
-                if display_previous_as:
+                if as_value_len > 0:
                     print(f"\t First AS : {hand.as_values}")
 
             for i in range(as_value_len, number):
                 # If it is not the dealer ask for the value of the AS card
-                if player_name != 'Dealer':
+                if player_name != default_bank_name:
                     hand.update_as_values(insert_as_value())
 
                 # Find it for the dealer
@@ -605,22 +546,69 @@ def display_hand(player, hand, first_round=False):
     print(f"\t {player.name} : ")
 
     # Display player hand
-    if player.name != 'Dealer':
-        print(f"\t\t - Hand {hand.number} : {hand.hand}")
+    if player.name != default_bank_name:
+        print(f"\t\t - Hand {hand.number} : {hand.cards}")
         print(f"\t\t - Value : {hand.hand_result}")
         print(f"\t\t - Hand Bet : {hand.bet}")
         print(f"\t\t - Total Bet : {player.total_bet}")
         print(f"\t\t - Deposit : {player.deposit}")
+
     # Display dealer hand
     else:
         # Only display one card for the first round
         if first_round:
-            print(f"\t\t - Hand : {hand.hand[1]}")
+            print(f"\t\t - Hand : ('X', '{hand.cards[1]}')")
         else:
-            print(f"\t\t - Hand : {hand.hand}")
+            print(f"\t\t - Hand : {hand.cards}")
             print(f"\t\t - Value : {hand.hand_result}")
 
     print('')
+
+
+def update_player_deposit(player, hand, action, reward=0):
+    """
+        Update player deposit
+    """
+
+    if action in ('burst', 'lost'):
+        player.deposit -= hand.bet
+    elif action == 'win':
+        player.deposit += reward
+
+    print(f"\t\t - Your deposit is {player.deposit} \n")
+
+
+def check_player_hand_state(players_dict, key, player, hand):
+    """
+       Verify a player can still play or if we have a winner
+    """
+
+    player_out = False
+    hand_burst = False
+
+    hand_result = hand.hand_result
+
+    if hand_result > 21:
+        print(f"\t ### {player.name} -> Hand {hand.number} burst")
+
+        # Update and display player deposit
+        update_player_deposit(player=player, hand=hand, action='burst')
+
+        # Delete the current hand
+        player.delete_hand(value=hand)
+        hand_burst = True
+
+        if len(player.hands) <= 0:
+            player_out = True
+
+    elif hand_result == 21:
+        hand.has_won = True
+
+    if player_out:
+        if players_dict.get(key):
+            del players_dict[key]
+
+    return player_out, hand_burst
 
 
 def ask_for_move():
@@ -637,128 +625,34 @@ def ask_for_move():
     while move_input not in '1234' or len(move_input) != 1:
         move_input = input("\t\t\t\t\t - Please choose between (1 - 4) : ")
 
-    return move_input
+    print('')
+
+    return int(move_input)
 
 
-def dealer_turn_play(players_dict, player_id, deck):
+def can_split(player, hand):
     """
-       Function that select automatically the dealer' moves
-    """
-    print("\t\t Dealer Move : ")
-
-    player = players_dict[player_id]
-
-    hand = player.hands[0]
-    hand_score = hand.hand_result
-
-    while hand_score < 17:
-        print("\t\t\t - Dealer Hit")
-        deal_cards(deck=deck, players_dict=players_dict, first_deal=False, player_id=player_id, hand=hand)
-        # Compute new score
-        compute_player_hand_score(player=player, hand=hand)
-        # Display the new hand
-        display_hand(player=player, hand=hand)
-        # Get new Score
-        hand_score = hand.hand_result
-
-    if hand_score <= 21:
-        print("\t\t\t - Dealer Stand \n")
-
-
-def display_result(player, dealer, hand, result):
-    """
-        Display the final result
+        check if the player can split its card
     """
 
-    player_name = player.name
-    player_hand = hand.hand
-    player_hand_number = hand.number
-    player_hand_result = hand.hand_result
-    player_bet = hand.bet
-    dealer_hand = dealer.hands[0].hand
-    dealer_hand_result = dealer.hands[0].hand_result
-
-    if result == 'draw':
-        print(f"\n\t {player_name} : *** Round draw ***")
-        print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
-        print(f"\t\t - Dealer Hand : {dealer_hand} -> {dealer_hand_result}")
-        print(f"\t\t - Deposit : {player.deposit} \n")
-
-    elif result == 'win':
-        print(f"\n\t {player_name} : *** Round won ***")
-
-        if hand.has_blackjack():
-            print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result} *** Blackjacks ***")
-            reward = int((player_bet * 150) / 100)
-        else:
-            print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
-            reward = player_bet
-
-        print(f"\t\t - Dealer Hand : {dealer_hand} -> {dealer_hand_result}")
-        print(f"\t\t - Bet : {player_bet} -> Won : {reward}")
-
-        update_player_deposit(player=player, hand=hand, action='win', reward=reward)
-
-    elif result == 'lost':
-        print(f"\n\t {player_name} : *** Round lost ***")
-        print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
-        print(f"\t\t - Dealer Hand : {dealer_hand} -> {dealer_hand_result}")
-        print(f"\t\t - Bet : {player_bet} -> Loose : {player_bet}")
-
-        update_player_deposit(player=player, hand=hand, action='lost', reward=player_bet)
-
-
-def dealer_hand_vs_player_hand(dealer, players_dict):
-    """
-       Compare the hand of the dealer and player to find winner
-    """
-    dealer_hand = dealer.hands[0]
-    dealer_hand_result = dealer_hand.hand_result
-
-    if dealer_hand_result > 21:
-        print("\t\t ### Dealer Burst")
-
-        # Since we have deleted all the players that has been burst we can say that
-        # all the player inside players_dict won
-        for player in players_dict.values():
-            if player.name != 'Dealer':
-                player_hands = player.hands
-
-                for hand in player_hands:
-                    if hand.has_blackjack():
-                        display_result(player=player, dealer=dealer, hand=hand, result='win')
-                    else:
-                        display_result(player=player, dealer=dealer, hand=hand, result='win')
-    else:
-        # Loop through all the players and choose players that hand beat the dealer hand
-        for player in players_dict.values():
-            if player.name != 'Dealer':
-                player_hands = player.hands
-
-                for hand in player_hands:
-                    player_hand_result = hand.hand_result
-
-                    if player_hand_result > dealer_hand_result:
-                        display_result(player=player, dealer=dealer, hand=hand, result='win')
-                    elif player_hand_result == dealer_hand_result:
-                        # If player has blackjack and dealer not, player win
-                        if hand.has_blackjack() and not dealer_hand.has_blackjack():
-                            display_result(player=player, dealer=dealer, hand=hand, result='win')
-                        else:
-                            display_result(player=player, dealer=dealer, hand=hand, result='draw')
-                    else:
-                        display_result(player=player, dealer=dealer, hand=hand, result='lost')
-
-
-def is_bankrupt(player):
-    """
-        check if the player has enough found
-    """
     result = False
 
-    if player.deposit < default_bet_amount and player.name != 'Dealer':
-        result = True
-        print(f"\n\t Sorry {player.name} you don't have enough money to continue \n")
+    if len(hand.cards) == 2:
+
+        if hand.has_double():
+            if player.total_bet + hand.bet <= player.deposit:
+                player.split_hand(value=hand)
+                result = True
+            else:
+                print("\t\t\t\t - Sorry you don't have enough money to split")
+
+        else:
+            print("\t\t\t\t - Sorry you cannot split this hand")
+
+    else:
+        print("\t\t\t\t - Sorry can only split your initial hand")
+
+    print('')
 
     return result
 
@@ -774,7 +668,7 @@ def can_double_down(player, hand):
     total_bet = player.total_bet
     hand_list = player.hands
 
-    if len(hand_list) == 1 and len(hand.hand) == 2:
+    if len(hand_list) == 1 and len(hand.cards) == 2:
         if not hand.has_been_split:
             if total_bet + default_bet_amount <= deposit:
                 while True:
@@ -809,104 +703,70 @@ def can_double_down(player, hand):
     return result
 
 
-def can_split(player, hand):
+def loop_through_player_hands(deck, players_dict, key, player, hand_tracker=0):
     """
-        check if the player can split its card
-    """
-    result = False
-
-    if len(hand.hand) == 2:
-        if hand.has_double():
-            if player.total_bet + hand.bet <= player.deposit:
-                player.split_hand(value=hand)
-                result = True
-            else:
-                print("\t\t\t\t - Sorry you don't have enough money to split")
-        else:
-            print("\t\t\t\t - Sorry you cannot split this hand")
-    else:
-        print("\t\t\t\t - Sorry can only split your initial hand")
-
-    print('')
-
-    return result
-
-
-def loop_through_player_hands(deck, current_player_dict, i):
-    """
-        Does through all the current players hands and ask what move
+        Loop through all the current player hands and ask what move
         he will select (hit, stand, doubling down, split)
     """
 
-    player = current_player_dict[i]
-    stop = False
+    hands = player.hands
 
-    # Loop through all the player hands
-    for hand in player.hands:
-        stop = False
-        print('')
+    # End the function since the player has no more hands to play
+    if hand_tracker >= len(hands):
+        return True
+    else:
+        print(len(hands))
 
-        # Check if the player current hand has only one card
-        # This one card is the result of splitting
-        if len(hand.hand) == 1 and hand.has_been_split is True:
-            # Deal one card more
-            deal_cards(deck=deck, players_dict=current_player_dict, first_deal=False, player_id=i, hand=hand)
 
-            # Compute the new hand score
-            compute_player_hand_score(player=player, hand=hand, display_previous_as=True)
+        # Get player current hand
+        hand = hands[hand_tracker]
 
-            # Display the new hand
-            display_hand(player=player, hand=hand)
+        # Compute current player hand score
+        compute_player_hand_score(player=player, hand=hand)
 
-            # Check player state
-            player_out, hand_burst = check_player_state(players_dict=current_player_dict, full_check=False,
-                                                        player_id=i)
-            if True in hand_burst or player_out:
-                stop = True
-        # if the player have more than one car on a split hand it means that hand has already been played
-        elif len(hand.hand) > 1 and hand.has_been_split is True:
-            stop = True
+        # Display current player hand
+        display_hand(player=player, hand=hand)
 
-        while not stop:
-            print(f"\t\t\t - Hand {hand.number} {hand.hand} : Value {hand.hand_result}")
+        # Check players hand state
+        player_out, hand_burst = check_player_hand_state(players_dict=players_dict, player=player, key=key, hand=hand)
 
-            # Ask if the player want to  hit or stand
+        # Check if the player has a valid hand
+        if not hand_burst:
+
+            # Ask if the player want to  hit or stand or ...
             move_input = ask_for_move()
 
             # Hitting
-            if int(move_input) == 1:
-                # Deal one card more
-                deal_cards(deck=deck, players_dict=current_player_dict, first_deal=False, player_id=i, hand=hand)
+            if move_input == 1:
+                # Deal one more card
+                deal_card(deck=deck, hand=hand)
 
-                # Compute hand score
-                compute_player_hand_score(player=player, hand=hand)
-
-                # Display the new hand
-                display_hand(player=player, hand=hand)
-
-                # Check player state
-                player_out, hand_burst = check_player_state(players_dict=current_player_dict, full_check=False,
-                                                            player_id=i)
-
-                if not player_out:
-                    stop = loop_through_player_hands(deck=deck, current_player_dict=current_player_dict, i=i)
-                else:
-                    stop = True
+                # Ask again for move
+                loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                          hand_tracker=hand_tracker)
 
             # Splitting
-            elif int(move_input) == 3:
+            elif move_input == 3:
                 result = can_split(player=player, hand=hand)
 
                 if result:
-                    stop = loop_through_player_hands(deck=deck, current_player_dict=current_player_dict, i=i)
+                    # Get the new hand
+                    for hand in player.hands:
+                        if len(hand.cards) == 1:
+                            # Deal one more care
+                            deal_card(deck=deck, hand=hand)
+
+                # Ask again for move
+                loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                          hand_tracker=hand_tracker)
 
             # Doubling down
             elif int(move_input) == 4:
                 result = can_double_down(player=player, hand=hand)
 
                 if result:
-                    # Deal one card more
-                    deal_cards(deck=deck, players_dict=current_player_dict, first_deal=False, player_id=i, hand=hand)
+                    # Deal one more card
+                    deal_card(deck=deck, hand=hand)
 
                     # Compute new bet score
                     compute_player_hand_score(player=player, hand=hand)
@@ -914,17 +774,153 @@ def loop_through_player_hands(deck, current_player_dict, i):
                     # Display the hand with the new bet score
                     display_hand(player=player, hand=hand)
 
-                    # First check player state
-                    check_player_state(players_dict=current_player_dict, full_check=False, player_id=i)
+                    # Check players hand state
+                    check_player_hand_state(players_dict=players_dict, player=player, key=key, hand=hand)
 
-                    stop = True
+                    # Got to the next hand
+                    loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                              hand_tracker=hand_tracker+1)
+
+                else:
+                    # Ask again for move
+                    loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                              hand_tracker=hand_tracker)
 
             # Standing
             else:
-                stop = True
-                print("")
+                # Got to the next hand
+                loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                          hand_tracker=hand_tracker+1)
 
-    return stop
+        else:
+            # Check if the player can still play
+            if not player_out:
+                # Got to the next hand
+                loop_through_player_hands(deck=deck, players_dict=players_dict, key=key, player=player,
+                                          hand_tracker=hand_tracker+1)
+
+
+def dealer_turn_to_play(deck, dealer, hand):
+    """
+       Function that select automatically the dealer' moves
+    """
+    print(f"\t\t {default_bank_name} Move : ")
+
+    hand_score = hand.hand_result
+
+    while hand_score < 17:
+        print(f"\t\t\t - {default_bank_name} Hit \n")
+
+        # Deal one more card
+        deal_card(deck=deck, hand=hand)
+
+        # Compute new score
+        compute_player_hand_score(player=dealer, hand=hand)
+
+        # Display the new hand
+        display_hand(player=dealer, hand=hand)
+
+        # Get new Score
+        hand_score = hand.hand_result
+
+    if hand_score <= 21:
+        print(f"\t\t\t - {default_bank_name} Stand \n")
+
+
+def display_result(player, dealer, hand, result):
+    """
+        Display the final result
+    """
+
+    player_name = player.name
+    player_hand = hand.cards
+    player_hand_number = hand.number
+    player_hand_result = hand.hand_result
+    player_bet = hand.bet
+    dealer_hand = dealer.hands[0].cards
+    dealer_hand_result = dealer.hands[0].hand_result
+
+    if result == 'draw':
+        print(f"\n\t {player_name} : *** Round draw ***")
+        print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
+        print(f"\t\t - {default_bank_name} Hand : {dealer_hand} -> {dealer_hand_result}")
+        print(f"\t\t - Deposit : {player.deposit} \n")
+
+    elif result == 'win':
+        print(f"\n\t {player_name} : *** Round won ***")
+
+        if hand.has_blackjack():
+            print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result} *** Blackjacks ***")
+            reward = int((player_bet * 150) / 100)
+        else:
+            print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
+            reward = player_bet
+
+        print(f"\t\t - {default_bank_name} Hand : {dealer_hand} -> {dealer_hand_result}")
+        print(f"\t\t - Bet : {player_bet} -> Won : {reward}")
+
+        update_player_deposit(player=player, hand=hand, action='win', reward=reward)
+
+    elif result == 'lost':
+        print(f"\n\t {player_name} : *** Round lost ***")
+        print(f"\t\t - Hand {player_hand_number} : {player_hand} -> {player_hand_result}")
+        print(f"\t\t - {default_bank_name} Hand : {dealer_hand} -> {dealer_hand_result}")
+        print(f"\t\t - Bet : {player_bet} -> Loose : {player_bet}")
+
+        update_player_deposit(player=player, hand=hand, action='lost', reward=player_bet)
+
+
+def dealer_hand_vs_player_hand(dealer, dealer_hand, players_dict):
+    """
+       Compare the dealer and player hand to find the winner
+    """
+    dealer_hand_result = dealer_hand.hand_result
+
+    if dealer_hand_result > 21:
+        print(f"\t\t ### {default_bank_name} Burst")
+
+        # Since we have deleted all the players that have burst we can say that
+        # all the players inside players_dict won
+        for player in players_dict.values():
+            if player.name != default_bank_name:
+                player_hands = player.hands
+
+                for hand in player_hands:
+                    display_result(player=player, dealer=dealer, hand=hand, result='win')
+    else:
+        # Loop through all the players and choose players that hand beat the dealer hand
+        for player in players_dict.values():
+            if player.name != default_bank_name:
+                player_hands = player.hands
+
+                for hand in player_hands:
+                    player_hand_result = hand.hand_result
+
+                    if player_hand_result > dealer_hand_result:
+                        display_result(player=player, dealer=dealer, hand=hand, result='win')
+
+                    elif player_hand_result == dealer_hand_result:
+                        # If player has blackjack and dealer not, player win
+                        if hand.has_blackjack() and not dealer_hand.has_blackjack():
+                            display_result(player=player, dealer=dealer, hand=hand, result='win')
+                        else:
+                            display_result(player=player, dealer=dealer, hand=hand, result='draw')
+
+                    else:
+                        display_result(player=player, dealer=dealer, hand=hand, result='lost')
+
+
+def is_bankrupt(player):
+    """
+        check if the player has enough found
+    """
+    result = False
+
+    if player.deposit < default_bet_amount and player.name != default_bank_name:
+        result = True
+        print(f"\n\t Sorry {player.name} you don't have enough money to continue \n")
+
+    return result
 
 
 def start_game(deck, players_dict, game_number):
@@ -940,70 +936,62 @@ def start_game(deck, players_dict, game_number):
     end_game, current_player_dict = ask_for_bet(players_dict=players_dict)
 
     if not end_game and len(current_player_dict) > 1:
+
         # Deal the first round
-        deal_cards(deck=deck, players_dict=current_player_dict)
+        # Deal one card at the time until each players have two
+        for i in list(range(len(current_player_dict))) * 2:
+            player = current_player_dict[i]
+            # Since it is the first round the players have only one hand
+            player_hand = player.hands[0]
 
-        # Display first hands
-        for player in current_player_dict.values():
-            hand = player.hands[0]
-            # Compute player hand score
-            compute_player_hand_score(player=player, hand=hand)
+            deal_card(deck=deck, hand=player_hand)
 
-            # Display player hands
-            display_hand(player=player, hand=hand, first_round=True)
+        # Create a copy of the dict in order to be able to delete player when
+        # their hand has burst
+        current_player_dict_copy = current_player_dict.copy()
 
-        # First check if we have winner
-        check_player_state(players_dict=current_player_dict)
+        # Compute the values and display the hands
+        for key, player in current_player_dict_copy.items():
 
-        # Track dealer id
-        j = 0
+            # print(f"\t {player.name} your turn ... \n")
 
-        # Players turn to play
-        if len(current_player_dict) > 1:
-            # Loop through all the players except the dealer
-            for i in range(len(current_player_dict) - 1):
-                player = current_player_dict[i]
+            # Player turn to play
+            if player.name != default_bank_name:
+                # Display dealer hand
+                dealer = current_player_dict.get(list(current_player_dict.keys())[-1])
+                display_hand(player=dealer, hand=dealer.hands[0], first_round=True)
 
-                # Display this only this the current player haven't won yet
-                if not player.hands[0].has_won:
-                    print(f"\t {player.name} your turn")
+                # Loop through all current player hands
+                loop_through_player_hands(deck=deck, players_dict=current_player_dict, key=key, player=player)
 
-                    # loop through each player hand and ask then what move they want
-                    loop_through_player_hands(deck=deck, current_player_dict=current_player_dict, i=i)
+            # Dealer turn to play
+            else:
+                hand = player.hands[0]
 
-                j = i
+                # Compute current dealer hand score
+                compute_player_hand_score(player=player, hand=hand)
 
-        # Dealer turns
-        dealer_id = j + 1
-        player = current_player_dict[dealer_id]
-        hand = player.hands[0]
-        print(f"\t {player.name} your turn \n")
+                # Display dealer hand
+                display_hand(player=player, hand=hand)
 
-        # Display dealer hand
-        display_hand(player=player, hand=hand)
+                # Do dealer move only if we still have player left
+                if len(current_player_dict) > 1:
+                    dealer_turn_to_play(deck=deck, dealer=player, hand=hand)
 
-        # Do dealer move only if we still have player left
-        if len(current_player_dict) > 1:
-            dealer_turn_play(players_dict=current_player_dict, player_id=dealer_id, deck=deck)
-
-            # Compare player and dealer hand and display result
-            dealer_hand_vs_player_hand(dealer=player, players_dict=current_player_dict)
-
-        players_dict_copy = players_dict.copy()
+                # Compare player and dealer hand and display result
+                dealer_hand_vs_player_hand(dealer=player, dealer_hand=hand, players_dict=current_player_dict)
 
         # Check if player has enough money to continue
-        for key in players_dict.keys():
-            if is_bankrupt(players_dict[key]):
-                del players_dict_copy[key]
+        for key in current_player_dict_copy.keys():
+            if is_bankrupt(current_player_dict_copy[key]):
+                if players_dict.get(key):
+                    del players_dict[key]
 
-        players_dict = players_dict_copy
-
-        # Check of the game have enough players to continue
+        # Check if the game has enough players to continue
         if len(players_dict) <= 1:
             end_game = True
             print("\t Not enough player to continue")
 
-        # Check if we have enough cards to play again
         # Check if we have enough cards to play again
         # Let assume that each player need at least 3 cards to play
         if len(deck.cards) < len(players_dict) * 3:
