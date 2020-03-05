@@ -182,7 +182,6 @@ class Hand:
         self.__set_hand(value=card)
         self.__set_bet(value=bet)
         self.__set_has_won(value=None)
-        self.__set_has_been_played(value=False)
 
         self.__as_values = list() if as_values is None else as_values
 
@@ -215,14 +214,6 @@ class Hand:
     def __get_has_won(self):
         """ Return hand state result """
         return self.__has_won
-
-    def __set_has_been_played(self, value):
-        """ Update hand state """
-        self.__has_been_played = value
-
-    def __get_has_been_played(self):
-        """ Return hand state result """
-        return self.__has_been_played
 
     def update_as_values(self, value):
         """ Update as_values list """
@@ -302,7 +293,6 @@ class Hand:
     cards = property(__get_hand, __set_hand)
     bet = property(__get_bet, __set_bet)
     has_won = property(__get_has_won, __set_has_won)
-    has_been_played = property(__get_has_been_played, __set_has_been_played)
 
 
 def deck_variables_init():
