@@ -1005,6 +1005,9 @@ def start_game(deck, players_dict, game_number):
                 if players_dict.get(key):
                     del players_dict[key]
 
+        # Delete current player copy
+        del current_player_dict_copy
+
         # Check if the game has enough players to continue
         if len(players_dict) <= 1:
             end_game = True
